@@ -1,6 +1,8 @@
 /* styles.css */
 body, html {
-  margin: 0; padding: 0; overflow: hidden;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 #controls {
   position: absolute;
@@ -13,18 +15,11 @@ body, html {
   flex-direction: column;
   gap: 8px;
 }
-#logo-upload,
-#color-picker,
-#plane-height,
-#place-btn {
+#controls input,
+#controls select,
+#controls button {
   width: 200px;
 }
-#ar-container {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-}
-/* Немного стили для слайдера */
 #plane-height {
   -webkit-appearance: none;
   height: 4px;
@@ -34,6 +29,13 @@ body, html {
 #plane-height::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 16px; height: 16px;
-  background: #888; border-radius: 50%;
+  background: #888;
+  border-radius: 50%;
   cursor: pointer;
+}
+#ar-container {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
 }
