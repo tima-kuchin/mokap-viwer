@@ -6,6 +6,9 @@ let scene, camera, renderer, raycaster, reticle, penModel, targetMesh;
 let manualPlane, manualPlaneHeight = 0.5;
 let modelScale = 1.0;
 
+let anchorPoint = null;
+let anchorSet = false;
+
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 canvas.width = canvas.height = 2048;
@@ -57,7 +60,7 @@ function updateTexture() {
   targetMesh.material.needsUpdate = true;
 }
 
-// UI events
+// UI
 document.getElementById('logo-upload').addEventListener('change', e => {
   const file = e.target.files[0];
   if (file && file.type === 'image/png') {
@@ -102,6 +105,7 @@ scaleSlider.addEventListener('input', () => {
   if (penModel) penModel.scale.setScalar(modelScale);
 });
 
+// Scene
 scene = new THREE.Scene();
 camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -109,6 +113,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.xr.enabled = true;
 document.getElementById('ar-container').appendChild(renderer.domElement);
 
+// AR
 const arButton = ARButton.createButton(renderer, { requiredFeatures: ['local-floor'] });
 document.getElementById('ar-button-container').appendChild(arButton);
 
@@ -117,11 +122,15 @@ renderer.xr.addEventListener('sessionstart', () => {
 });
 renderer.xr.addEventListener('sessionend', () => {
   document.getElementById('controls').style.display = 'flex';
+  anchorSet = false;
+  anchorPoint = null;
 });
 
+// Light
 const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
 scene.add(light);
 
+// Raycaster
 raycaster = new THREE.Raycaster();
 reticle = new THREE.Mesh(
   new THREE.RingGeometry(0.07, 0.1, 32).rotateX(-Math.PI / 2),
@@ -130,15 +139,16 @@ reticle = new THREE.Mesh(
 reticle.visible = false;
 scene.add(reticle);
 
+// Plane
 manualPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -manualPlaneHeight);
 
+// Модель
 new GLTFLoader().load(
   'models/pen.glb',
   gltf => {
     penModel = gltf.scene;
-    penModel.visible = true;
+    penModel.visible = false;
     penModel.scale.setScalar(modelScale);
-    penModel.position.set(0, 0.2, -0.5);
     penModel.traverse(obj => {
       if (obj.isMesh && obj.material.map) targetMesh = obj;
     });
@@ -150,6 +160,7 @@ new GLTFLoader().load(
   err => alert('Ошибка загрузки модели: ' + err.message)
 );
 
+// Наведение
 renderer.domElement.addEventListener('pointermove', ev => {
   const r = renderer.domElement.getBoundingClientRect();
   const x = ((ev.clientX - r.left) / r.width) * 2 - 1;
@@ -159,24 +170,34 @@ renderer.domElement.addEventListener('pointermove', ev => {
   raycaster.setFromCamera({ x, y }, camera);
 
   const hit = raycaster.ray.intersectPlane(manualPlane, new THREE.Vector3());
-  if (hit) {
+  if (hit && !anchorSet) {
     reticle.visible = true;
     reticle.position.copy(hit);
     reticle.rotation.set(-Math.PI / 2, 0, 0);
-
-    if (penModel) {
-      penModel.visible = true;
-      penModel.position.copy(hit);
-    }
-  } else {
+  } else if (!anchorSet) {
     reticle.visible = false;
   }
 });
 
+// Установка якоря
+renderer.domElement.addEventListener('pointerdown', () => {
+  if (!anchorSet && reticle.visible) {
+    anchorPoint = reticle.position.clone();
+    anchorSet = true;
+    reticle.visible = false;
+    if (penModel) {
+      penModel.visible = true;
+      penModel.position.copy(anchorPoint);
+    }
+  }
+});
+
+// Отрисовка
 renderer.setAnimationLoop(() => {
   renderer.render(scene, camera);
 });
 
+// Resize
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
