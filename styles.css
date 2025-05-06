@@ -1,29 +1,39 @@
+/* styles.css */
 body, html {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-  }
-  #controls {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 2;
-    background: rgba(255,255,255,0.9);
-    padding: 10px;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  #logo-upload,
-  #color-picker,
-  #place-btn {
-    width: 200px;
-  }
-  #ar-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-  }  
+  margin: 0; padding: 0; overflow: hidden;
+}
+#controls {
+  position: absolute;
+  top: 10px; left: 10px;
+  z-index: 10;
+  background: rgba(255,255,255,0.9);
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+#logo-upload,
+#color-picker,
+#plane-height,
+#place-btn {
+  width: 200px;
+}
+#ar-container {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+}
+/* Немного стили для слайдера */
+#plane-height {
+  -webkit-appearance: none;
+  height: 4px;
+  background: #ddd;
+  border-radius: 2px;
+}
+#plane-height::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  background: #888; border-radius: 50%;
+  cursor: pointer;
+}
