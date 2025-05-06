@@ -1,10 +1,9 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AR-ручка с ручной разметкой плоскости</title>
+  <title>AR-ручка с настройкой</title>
   <link rel="stylesheet" href="styles.css" type="text/css">
 </head>
 <body>
@@ -23,13 +22,12 @@
       <option value="#8B00FF">Фиолетовый</option>
     </select>
 
-    <label for="plane-height">Высота «стола» (м): <span id="plane-height-val">0.50</span></label>
+    <label for="plane-height">Высота плоскости (м): <span id="plane-height-val">0.50</span></label>
     <input type="range" id="plane-height" min="0.0" max="2.0" step="0.01" value="0.5">
-
-    <button id="place-btn">Построить модель</button>
   </div>
 
   <div id="ar-container"></div>
+  <div id="ar-button-container"></div>
 
   <script type="module" src="app.js"></script>
 </body>

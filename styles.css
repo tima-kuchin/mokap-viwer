@@ -1,9 +1,9 @@
-/* styles.css */
 body, html {
   margin: 0;
   padding: 0;
   overflow: hidden;
 }
+
 #controls {
   position: absolute;
   top: 10px; left: 10px;
@@ -15,17 +15,19 @@ body, html {
   flex-direction: column;
   gap: 8px;
 }
+
 #controls input,
 #controls select,
 #controls button {
   width: 200px;
 }
+
 #plane-height {
-  -webkit-appearance: none;
   height: 4px;
   background: #ddd;
   border-radius: 2px;
 }
+
 #plane-height::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 16px; height: 16px;
@@ -33,9 +35,18 @@ body, html {
   border-radius: 50%;
   cursor: pointer;
 }
+
 #ar-container {
   position: absolute;
   top: 0; left: 0;
   width: 100vw;
   height: 100vh;
+}
+
+#ar-button-container {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
 }
