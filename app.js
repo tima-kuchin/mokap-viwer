@@ -1,6 +1,6 @@
-// app.js
-import { MindARThree } from 'https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-three.prod.js';
+import * as THREE from 'https://unpkg.com/three@0.152.2/build/three.module.js';
 import { GLTFLoader } from 'https://unpkg.com/three@0.152.2/examples/jsm/loaders/GLTFLoader.js';
+import { MindARThree } from 'https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-three.module.js';
 
 const generateCustomTexture = async (originalImage, logoFile, newColorHex = '#00ff00') => {
   const canvas = document.createElement('canvas');
@@ -37,7 +37,7 @@ const generateCustomTexture = async (originalImage, logoFile, newColorHex = '#00
   logoImage.src = URL.createObjectURL(logoFile);
   await logoImage.decode();
 
-  // Координаты окна логотипа: x = 215, y = 512, width = 135, height = 738
+  // Вставка логотипа (позиция и размер под твой макет)
   ctx.save();
   ctx.translate(215 + 135 / 2, 512 + 738 / 2);
   ctx.rotate(-Math.PI / 2);
@@ -52,15 +52,16 @@ const start = async (logoFile, colorHex) => {
     container: document.querySelector("#ar-container"),
     imageTargetSrc: "./targets.mind",
   });
+
   const { renderer, scene, camera } = mindarThree;
   const anchor = mindarThree.addAnchor(0);
 
   const loader = new GLTFLoader();
-  loader.load('models/pen.glb', async (gltf) => {
+  loader.load('models/pen-ed.glb', async (gltf) => {
     const model = gltf.scene;
-    model.scale.set(0.5, 0.5, 0.5);        
-    model.position.set(0, 0.2, 0);             
-    model.rotation.set(Math.PI / 2, 0, 0);       
+    model.scale.set(0.5, 0.5, 0.5);
+    model.position.set(0, 0.2, 0);
+    model.rotation.set(Math.PI / 2, 0, 0);
 
     model.traverse(async (child) => {
       if (child.isMesh && child.material.map) {
@@ -80,8 +81,7 @@ const start = async (logoFile, colorHex) => {
   });
 };
 
-const startButton = document.getElementById("startAR");
-startButton.addEventListener("click", () => {
+document.getElementById("startAR").addEventListener("click", () => {
   const logoInput = document.getElementById("logoInput");
   const colorPicker = document.getElementById("colorPicker");
   if (logoInput.files.length === 0) {
