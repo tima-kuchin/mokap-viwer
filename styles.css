@@ -2,43 +2,32 @@ body, html {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  font-family: sans-serif;
 }
 
 #controls {
   position: absolute;
-  top: 10px; left: 10px;
+  top: 10px;
+  left: 10px;
   z-index: 10;
-  background: rgba(255,255,255,0.9);
+  background: rgba(255, 255, 255, 0.95);
   padding: 10px;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  max-width: 240px;
 }
 
 #controls input,
-#controls select,
-#controls button {
-  width: 200px;
-}
-
-#plane-height {
-  height: 4px;
-  background: #ddd;
-  border-radius: 2px;
-}
-
-#plane-height::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px; height: 16px;
-  background: #888;
-  border-radius: 50%;
-  cursor: pointer;
+#controls select {
+  width: 100%;
 }
 
 #ar-container {
   position: absolute;
-  top: 0; left: 0;
+  top: 0;
+  left: 0;
   width: 100vw;
   height: 100vh;
 }

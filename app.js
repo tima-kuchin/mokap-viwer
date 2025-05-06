@@ -4,6 +4,7 @@ import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.126.1/examples/js
 
 let scene, camera, renderer, raycaster, reticle, penModel, targetMesh;
 let manualPlane, manualPlaneHeight = 0.5;
+let modelScale = 1.0;
 
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
@@ -31,6 +32,7 @@ function initCanvas() {
       data[i + 2] = bNew;
     }
   }
+
   ctx.putImageData(imageData, 0, 0);
 
   if (logoImg) {
@@ -44,20 +46,18 @@ function initCanvas() {
 }
 
 function updateTexture() {
-  if (!targetMesh) return;
+  if (!targetMesh || !targetMesh.material || !targetMesh.material.map) return;
+
   const tex = new THREE.CanvasTexture(canvas);
   tex.flipY = false;
   tex.encoding = THREE.sRGBEncoding;
   tex.needsUpdate = true;
 
-  if (!(targetMesh.material instanceof THREE.MeshStandardMaterial)) {
-    targetMesh.material = new THREE.MeshStandardMaterial();
-  }
   targetMesh.material.map = tex;
   targetMesh.material.needsUpdate = true;
 }
 
-// UI: логотип
+// UI events
 document.getElementById('logo-upload').addEventListener('change', e => {
   const file = e.target.files[0];
   if (file && file.type === 'image/png') {
@@ -68,7 +68,6 @@ document.getElementById('logo-upload').addEventListener('change', e => {
       logoImg.onload = () => {
         initCanvas();
         updateTexture();
-        alert('Логотип загружен');
       };
     };
     reader.readAsDataURL(file);
@@ -77,14 +76,12 @@ document.getElementById('logo-upload').addEventListener('change', e => {
   }
 });
 
-// UI: цвет
 document.getElementById('color-picker').addEventListener('change', e => {
   baseColor = e.target.value;
   initCanvas();
   updateTexture();
 });
 
-// UI: высота плоскости
 const slider = document.getElementById('plane-height');
 const disp = document.getElementById('plane-height-val');
 manualPlaneHeight = parseFloat(slider.value);
@@ -95,16 +92,16 @@ slider.addEventListener('input', () => {
   manualPlane.constant = -manualPlaneHeight;
 });
 
-// Проверка WebXR
-if (navigator.xr) {
-  navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
-    if (!supported) alert('Ваше устройство не поддерживает WebXR AR');
-  });
-} else {
-  alert('Ваш браузер не поддерживает WebXR');
-}
+const scaleSlider = document.getElementById('model-scale');
+const scaleDisp = document.getElementById('model-scale-val');
+modelScale = parseFloat(scaleSlider.value);
+scaleDisp.textContent = modelScale.toFixed(2);
+scaleSlider.addEventListener('input', () => {
+  modelScale = parseFloat(scaleSlider.value);
+  scaleDisp.textContent = modelScale.toFixed(2);
+  if (penModel) penModel.scale.setScalar(modelScale);
+});
 
-// Сцена
 scene = new THREE.Scene();
 camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -112,31 +109,19 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.xr.enabled = true;
 document.getElementById('ar-container').appendChild(renderer.domElement);
 
-// AR кнопка
 const arButton = ARButton.createButton(renderer, { requiredFeatures: ['local-floor'] });
 document.getElementById('ar-button-container').appendChild(arButton);
 
 renderer.xr.addEventListener('sessionstart', () => {
   document.getElementById('controls').style.display = 'none';
 });
-
 renderer.xr.addEventListener('sessionend', () => {
   document.getElementById('controls').style.display = 'flex';
 });
 
-// Свет
 const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
 scene.add(light);
 
-// Отладочный куб
-const debugCube = new THREE.Mesh(
-  new THREE.BoxGeometry(0.1, 0.1, 0.1),
-  new THREE.MeshNormalMaterial()
-);
-debugCube.position.set(0, 0.2, -0.5); // 50 см от камеры
-scene.add(debugCube);
-
-// Raycaster + reticle
 raycaster = new THREE.Raycaster();
 reticle = new THREE.Mesh(
   new THREE.RingGeometry(0.07, 0.1, 32).rotateX(-Math.PI / 2),
@@ -145,29 +130,26 @@ reticle = new THREE.Mesh(
 reticle.visible = false;
 scene.add(reticle);
 
-// Плоскость
 manualPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -manualPlaneHeight);
 
-// Загрузка модели
 new GLTFLoader().load(
   'models/pen.glb',
   gltf => {
     penModel = gltf.scene;
     penModel.visible = true;
-    penModel.position.set(0, 0.2, -0.5); // для отладки
+    penModel.scale.setScalar(modelScale);
+    penModel.position.set(0, 0.2, -0.5);
     penModel.traverse(obj => {
       if (obj.isMesh && obj.material.map) targetMesh = obj;
     });
     scene.add(penModel);
     initCanvas();
     updateTexture();
-    alert('Модель загружена');
   },
   undefined,
   err => alert('Ошибка загрузки модели: ' + err.message)
 );
 
-// Обработка движений
 renderer.domElement.addEventListener('pointermove', ev => {
   const r = renderer.domElement.getBoundingClientRect();
   const x = ((ev.clientX - r.left) / r.width) * 2 - 1;
@@ -183,6 +165,7 @@ renderer.domElement.addEventListener('pointermove', ev => {
     reticle.rotation.set(-Math.PI / 2, 0, 0);
 
     if (penModel) {
+      penModel.visible = true;
       penModel.position.copy(hit);
     }
   } else {
@@ -190,12 +173,10 @@ renderer.domElement.addEventListener('pointermove', ev => {
   }
 });
 
-// Анимация
 renderer.setAnimationLoop(() => {
   renderer.render(scene, camera);
 });
 
-// Resize
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();

@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AR-ручка с настройкой</title>
-  <link rel="stylesheet" href="styles.css" type="text/css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AR-ручка с настройками</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div id="controls">
     <label for="logo-upload">Загрузить логотип (PNG):</label>
-    <input type="file" id="logo-upload" accept="image/png">
+    <input type="file" id="logo-upload" accept="image/png" />
 
     <label for="color-picker">Цвет корпуса:</label>
     <select id="color-picker">
@@ -23,7 +23,10 @@
     </select>
 
     <label for="plane-height">Высота плоскости (м): <span id="plane-height-val">0.50</span></label>
-    <input type="range" id="plane-height" min="0.0" max="2.0" step="0.01" value="0.5">
+    <input type="range" id="plane-height" min="0.0" max="2.0" step="0.01" value="0.5" />
+
+    <label for="model-scale">Масштаб модели: <span id="model-scale-val">1.00</span>x</label>
+    <input type="range" id="model-scale" min="0.01" max="5.0" step="0.01" value="1.0" />
   </div>
 
   <div id="ar-container"></div>
