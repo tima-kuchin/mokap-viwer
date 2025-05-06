@@ -1,37 +1,20 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AR-ручка с настройками</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>AR Ручка с логотипом</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/three@0.152.2/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-three.prod.js"></script>
 </head>
 <body>
   <div id="controls">
-    <label for="logo-upload">Загрузить логотип (PNG):</label>
-    <input type="file" id="logo-upload" accept="image/png" />
-
-    <label for="color-picker">Цвет корпуса:</label>
-    <select id="color-picker">
-      <option value="#FF0000">Красный</option>
-      <option value="#FF7F00">Оранжевый</option>
-      <option value="#FFFF00">Жёлтый</option>
-      <option value="#00FF00">Зелёный</option>
-      <option value="#0000FF" selected>Синий</option>
-      <option value="#4B0082">Индиго</option>
-      <option value="#8B00FF">Фиолетовый</option>
-    </select>
-
-    <label for="plane-height">Высота плоскости (м): <span id="plane-height-val">0.50</span></label>
-    <input type="range" id="plane-height" min="0.0" max="2.0" step="0.01" value="0.5" />
-
-    <label for="model-scale">Масштаб модели: <span id="model-scale-val">1.00</span>x</label>
-    <input type="range" id="model-scale" min="0.01" max="5.0" step="0.01" value="1.0" />
+    <label>Загрузите логотип (PNG): <input type="file" id="logoInput" accept="image/png" /></label>
+    <label>Цвет корпуса: <input type="color" id="colorPicker" value="#3a8ac7" /></label>
+    <button id="startAR">Начать AR</button>
   </div>
-
   <div id="ar-container"></div>
-  <div id="ar-button-container"></div>
-
   <script type="module" src="app.js"></script>
 </body>
 </html>

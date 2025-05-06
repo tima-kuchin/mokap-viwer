@@ -1,209 +1,92 @@
-import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js';
-import { GLTFLoader } from 'https://unpkg.com/three@0.126.1/examples/jsm/loaders/GLTFLoader.js';
-import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.126.1/examples/jsm/webxr/ARButton.js';
+// app.js
+import { MindARThree } from 'https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-three.prod.js';
+import { GLTFLoader } from 'https://unpkg.com/three@0.152.2/examples/jsm/loaders/GLTFLoader.js';
 
-let scene, camera, renderer, raycaster, reticle, penModel, targetMesh;
-let manualPlane, manualPlaneHeight = 0.5;
-let modelScale = 1.0;
+const generateCustomTexture = async (originalImage, logoFile, newColorHex = '#00ff00') => {
+  const canvas = document.createElement('canvas');
+  canvas.width = originalImage.width;
+  canvas.height = originalImage.height;
+  const ctx = canvas.getContext('2d');
 
-let anchorPoint = null;
-let anchorSet = false;
-
-const canvas = document.createElement('canvas');
-const ctx = canvas.getContext('2d', { willReadFrequently: true });
-canvas.width = canvas.height = 2048;
-
-let logoImg = null;
-let baseColor = '#3a8ac7';
-
-function initCanvas() {
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(originalImage, 0, 0);
 
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imageData.data;
-  const r0 = 0x3a, g0 = 0x8a, b0 = 0xc7;
 
-  const rNew = parseInt(baseColor.slice(1, 3), 16);
-  const gNew = parseInt(baseColor.slice(3, 5), 16);
-  const bNew = parseInt(baseColor.slice(5, 7), 16);
+  const targetColor = [0x3a, 0x8a, 0xc7];
+  const newColor = [
+    parseInt(newColorHex.slice(1, 3), 16),
+    parseInt(newColorHex.slice(3, 5), 16),
+    parseInt(newColorHex.slice(5, 7), 16)
+  ];
 
   for (let i = 0; i < data.length; i += 4) {
-    if (data[i] === r0 && data[i + 1] === g0 && data[i + 2] === b0) {
-      data[i] = rNew;
-      data[i + 1] = gNew;
-      data[i + 2] = bNew;
+    if (
+      data[i] === targetColor[0] &&
+      data[i + 1] === targetColor[1] &&
+      data[i + 2] === targetColor[2]
+    ) {
+      data[i] = newColor[0];
+      data[i + 1] = newColor[1];
+      data[i + 2] = newColor[2];
     }
   }
-
   ctx.putImageData(imageData, 0, 0);
 
-  if (logoImg) {
-    const x0 = 215, y0 = 512, w = 135, h = 738;
-    ctx.save();
-    ctx.translate(x0 + w / 2, y0 + h / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.drawImage(logoImg, -h / 2, -w / 2, h, w);
-    ctx.restore();
-  }
-}
+  const logoImage = new Image();
+  logoImage.src = URL.createObjectURL(logoFile);
+  await logoImage.decode();
 
-function updateTexture() {
-  if (!targetMesh || !targetMesh.material || !targetMesh.material.map) return;
+  // Координаты окна логотипа: x = 215, y = 512, width = 135, height = 738
+  ctx.save();
+  ctx.translate(215 + 135 / 2, 512 + 738 / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.drawImage(logoImage, -738 / 2, -135 / 2, 738, 135);
+  ctx.restore();
 
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.flipY = false;
-  tex.encoding = THREE.sRGBEncoding;
-  tex.needsUpdate = true;
+  return new THREE.CanvasTexture(canvas);
+};
 
-  targetMesh.material.map = tex;
-  targetMesh.material.needsUpdate = true;
-}
+const start = async (logoFile, colorHex) => {
+  const mindarThree = new MindARThree({
+    container: document.querySelector("#ar-container"),
+    imageTargetSrc: "./targets.mind",
+  });
+  const { renderer, scene, camera } = mindarThree;
+  const anchor = mindarThree.addAnchor(0);
 
-// UI
-document.getElementById('logo-upload').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (file && file.type === 'image/png') {
-    const reader = new FileReader();
-    reader.onload = ev => {
-      logoImg = new Image();
-      logoImg.src = ev.target.result;
-      logoImg.onload = () => {
-        initCanvas();
-        updateTexture();
-      };
-    };
-    reader.readAsDataURL(file);
-  } else {
-    alert('Выберите PNG-файл.');
-  }
-});
+  const loader = new GLTFLoader();
+  loader.load('models/pen.glb', async (gltf) => {
+    const model = gltf.scene;
+    model.scale.set(0.5, 0.5, 0.5);        
+    model.position.set(0, 0.2, 0);             
+    model.rotation.set(Math.PI / 2, 0, 0);       
 
-document.getElementById('color-picker').addEventListener('change', e => {
-  baseColor = e.target.value;
-  initCanvas();
-  updateTexture();
-});
-
-const slider = document.getElementById('plane-height');
-const disp = document.getElementById('plane-height-val');
-manualPlaneHeight = parseFloat(slider.value);
-disp.textContent = manualPlaneHeight.toFixed(2);
-slider.addEventListener('input', () => {
-  manualPlaneHeight = parseFloat(slider.value);
-  disp.textContent = manualPlaneHeight.toFixed(2);
-  manualPlane.constant = -manualPlaneHeight;
-});
-
-const scaleSlider = document.getElementById('model-scale');
-const scaleDisp = document.getElementById('model-scale-val');
-modelScale = parseFloat(scaleSlider.value);
-scaleDisp.textContent = modelScale.toFixed(2);
-scaleSlider.addEventListener('input', () => {
-  modelScale = parseFloat(scaleSlider.value);
-  scaleDisp.textContent = modelScale.toFixed(2);
-  if (penModel) penModel.scale.setScalar(modelScale);
-});
-
-// Scene
-scene = new THREE.Scene();
-camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.xr.enabled = true;
-document.getElementById('ar-container').appendChild(renderer.domElement);
-
-// AR Button
-const arButton = ARButton.createButton(renderer, { requiredFeatures: ['local-floor'] });
-document.getElementById('ar-button-container').appendChild(arButton);
-
-renderer.xr.addEventListener('sessionstart', () => {
-  document.getElementById('controls').style.display = 'none';
-});
-renderer.xr.addEventListener('sessionend', () => {
-  document.getElementById('controls').style.display = 'flex';
-  anchorSet = false;
-  anchorPoint = null;
-});
-
-// Light
-const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-scene.add(light);
-
-// Raycaster
-raycaster = new THREE.Raycaster();
-reticle = new THREE.Mesh(
-  new THREE.RingGeometry(0.07, 0.1, 32).rotateX(-Math.PI / 2),
-  new THREE.MeshBasicMaterial({ color: 0x00ffff })
-);
-reticle.visible = false;
-scene.add(reticle);
-
-// Плоскость
-manualPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -manualPlaneHeight);
-
-// Модель
-new GLTFLoader().load(
-  'models/pen.glb',
-  gltf => {
-    penModel = gltf.scene;
-    penModel.visible = false;
-    penModel.scale.setScalar(modelScale);
-    penModel.traverse(obj => {
-      if (obj.isMesh && obj.material.map) targetMesh = obj;
+    model.traverse(async (child) => {
+      if (child.isMesh && child.material.map) {
+        const originalImage = child.material.map.image;
+        const texture = await generateCustomTexture(originalImage, logoFile, colorHex);
+        child.material.map = texture;
+        child.material.needsUpdate = true;
+      }
     });
-    scene.add(penModel);
-    initCanvas();
-    updateTexture();
-  },
-  undefined,
-  err => alert('Ошибка загрузки модели: ' + err.message)
-);
 
-// Наведение
-renderer.domElement.addEventListener('pointermove', ev => {
-  const r = renderer.domElement.getBoundingClientRect();
-  const x = ((ev.clientX - r.left) / r.width) * 2 - 1;
-  const y = -((ev.clientY - r.top) / r.height) * 2 + 1;
+    anchor.group.add(model);
+  });
 
-  camera.updateMatrixWorld();
-  raycaster.setFromCamera({ x, y }, camera);
+  await mindarThree.start();
+  renderer.setAnimationLoop(() => {
+    renderer.render(scene, camera);
+  });
+};
 
-  const hit = raycaster.ray.intersectPlane(manualPlane, new THREE.Vector3());
-  if (hit && !anchorSet) {
-    reticle.visible = true;
-    reticle.position.copy(hit);
-    reticle.rotation.set(-Math.PI / 2, 0, 0);
-  } else if (!anchorSet) {
-    reticle.visible = false;
+const startButton = document.getElementById("startAR");
+startButton.addEventListener("click", () => {
+  const logoInput = document.getElementById("logoInput");
+  const colorPicker = document.getElementById("colorPicker");
+  if (logoInput.files.length === 0) {
+    alert("Пожалуйста, загрузите логотип.");
+    return;
   }
+  start(logoInput.files[0], colorPicker.value);
 });
-
-// Контроллер WebXR (нажатие = выбор якоря)
-const controller = renderer.xr.getController(0);
-controller.addEventListener('select', () => {
-  if (!anchorSet && reticle.visible) {
-    anchorPoint = reticle.position.clone();
-    anchorSet = true;
-    reticle.visible = false;
-    if (penModel) {
-      penModel.visible = true;
-      penModel.position.copy(anchorPoint);
-    }
-  }
-});
-scene.add(controller);
-
-// Анимация
-renderer.setAnimationLoop(() => {
-  renderer.render(scene, camera);
-});
-
-// Resize
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-initCanvas();
