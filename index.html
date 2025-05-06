@@ -103,7 +103,7 @@
 
       // Загрузка модели ручки
       const loader = new THREE.GLTFLoader();
-      loader.load('models/pen.glb', (gltf) => {
+      loader.load('models/PEN.glb', (gltf) => {
         penModel = gltf.scene;
         penModel.visible = false;
         penModel.traverse((child) => {
