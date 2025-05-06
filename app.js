@@ -10,7 +10,7 @@ let anchorPoint = null;
 let anchorSet = false;
 
 const canvas = document.createElement('canvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
 canvas.width = canvas.height = 2048;
 
 let logoImg = null;
@@ -113,7 +113,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.xr.enabled = true;
 document.getElementById('ar-container').appendChild(renderer.domElement);
 
-// AR
+// AR Button
 const arButton = ARButton.createButton(renderer, { requiredFeatures: ['local-floor'] });
 document.getElementById('ar-button-container').appendChild(arButton);
 
@@ -139,7 +139,7 @@ reticle = new THREE.Mesh(
 reticle.visible = false;
 scene.add(reticle);
 
-// Plane
+// Плоскость
 manualPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -manualPlaneHeight);
 
 // Модель
@@ -179,8 +179,9 @@ renderer.domElement.addEventListener('pointermove', ev => {
   }
 });
 
-// Установка якоря
-renderer.domElement.addEventListener('pointerdown', () => {
+// Контроллер WebXR (нажатие = выбор якоря)
+const controller = renderer.xr.getController(0);
+controller.addEventListener('select', () => {
   if (!anchorSet && reticle.visible) {
     anchorPoint = reticle.position.clone();
     anchorSet = true;
@@ -191,8 +192,9 @@ renderer.domElement.addEventListener('pointerdown', () => {
     }
   }
 });
+scene.add(controller);
 
-// Отрисовка
+// Анимация
 renderer.setAnimationLoop(() => {
   renderer.render(scene, camera);
 });
