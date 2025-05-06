@@ -43,16 +43,14 @@
 
   <div id="ar-container"></div>
 
-  <!-- Three.js и модули -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
-  <script src="https://github.com/mrdoob/three.js/blob/master/examples/jsm/loaders/GLTFLoader.js"></script>
-  <script src="https://app.unpkg.com/three@0.126.1/files/examples/jsm/webxr/ARButton.js"></script>
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js';
+    import { GLTFLoader } from 'https://unpkg.com/three@0.126.1/examples/jsm/loaders/GLTFLoader.js';
+    import { ARButton } from 'https://app.unpkg.com/three@0.126.1/files/examples/jsm/webxr/ARButton.js';
 
-  <script>
     let scene, camera, renderer, controller;
     let reticle, penModel, targetMesh;
 
-    // Offscreen canvas для текстуры
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     canvas.width = 2048;
@@ -61,22 +59,17 @@
     let baseColor = '#3a8ac7';
 
     function initCanvas() {
-      // Заливаем фон цветом корпуса
       ctx.fillStyle = baseColor;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      // Рисуем логотип, если есть
       if (logoImg) drawLogo();
     }
 
     function drawLogo() {
-      // Задаём область: справа-налево 215-350px, сверху-вниз 512-1250px
-      const xStart = canvas.width - 350;      // 2048 - 350 = 1698
+      const xStart = canvas.width - 350;
       const yStart = 512;
-      const rectWidth = 350 - 215;            // 135px
-      const rectHeight = 1250 - 512;          // 738px
-      // Очищаем область
+      const rectWidth = 135;
+      const rectHeight = 738;
       ctx.clearRect(xStart, yStart, rectWidth, rectHeight);
-      // Поворачиваем и рисуем логотип на 90° против часовой
       ctx.save();
       ctx.translate(xStart, yStart + rectHeight);
       ctx.rotate(-Math.PI / 2);
@@ -94,37 +87,28 @@
       targetMesh.material.needsUpdate = true;
     }
 
-    // Инициализируем canvas
     initCanvas();
-
     init();
+
     function init() {
-      // Сцена и камера
       scene = new THREE.Scene();
       camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-      // Рендерер с поддержкой AR
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.xr.enabled = true;
       document.getElementById('ar-container').appendChild(renderer.domElement);
 
-      // Кнопка входа в AR внутри controls
       const arBtn = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] });
       arBtn.textContent = 'Войти в AR';
       document.getElementById('controls').appendChild(arBtn);
 
-      // XR-контроллер для касания
       controller = renderer.xr.getController(0);
       controller.addEventListener('select', onSelect);
       scene.add(controller);
 
-      // Кнопка «Построить модель»
-      document.getElementById('place-btn').addEventListener('click', () => {
-        onSelect();
-      });
+      document.getElementById('place-btn').addEventListener('click', onSelect);
 
-      // Ретикл для hit-test
       const geometry = new THREE.RingGeometry(0.08, 0.1, 32).rotateX(-Math.PI/2);
       const material = new THREE.MeshBasicMaterial({ color: 0x007AFF });
       reticle = new THREE.Mesh(geometry, material);
@@ -132,8 +116,7 @@
       reticle.visible = false;
       scene.add(reticle);
 
-      // Загрузка модели ручки
-      const loader = new THREE.GLTFLoader();
+      const loader = new GLTFLoader();
       loader.load('models/pen.glb', (gltf) => {
         penModel = gltf.scene;
         penModel.visible = false;
@@ -143,7 +126,6 @@
         scene.add(penModel);
       });
 
-      // Загрузка логотипа
       document.getElementById('logo-upload').addEventListener('change', (event) => {
         const file = event.target.files[0];
         if (file && file.type === 'image/png') {
@@ -162,14 +144,12 @@
         }
       });
 
-      // Смена цвета корпуса
       document.getElementById('color-picker').addEventListener('change', (e) => {
         baseColor = e.target.value;
         initCanvas();
         updateTexture();
       });
 
-      // Hit-test и рендер
       renderer.xr.addEventListener('sessionstart', () => {
         const session = renderer.xr.getSession();
         session.requestReferenceSpace('viewer').then((refSpace) => {
