@@ -6,8 +6,19 @@
   <title>AR-модель ручки с логотипом</title>
   <style>
     body, html { margin: 0; padding: 0; overflow: hidden; }
-    #controls { position: absolute; top: 10px; left: 10px; z-index: 1; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 8px; }
-    #logo-upload, #color-picker { display: block; margin-bottom: 10px; }
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1;
+      background: rgba(255,255,255,0.9);
+      padding: 10px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    #logo-upload, #color-picker, #place-btn { display: block; width: 200px; }
     #ar-container { width: 100vw; height: 100vh; }
   </style>
 </head>
@@ -15,17 +26,21 @@
   <div id="controls">
     <label for="logo-upload">Загрузить логотип (PNG):</label>
     <input type="file" id="logo-upload" accept="image/png">
+
     <label for="color-picker">Выберите цвет корпуса:</label>
     <select id="color-picker">
       <option value="#FF0000">Красный</option>
       <option value="#FF7F00">Оранжевый</option>
       <option value="#FFFF00">Жёлтый</option>
       <option value="#00FF00">Зелёный</option>
-      <option value="#0000FF">Синий</option>
+      <option value="#0000FF" selected>Синий</option>
       <option value="#4B0082">Индиго</option>
       <option value="#8B00FF">Фиолетовый</option>
     </select>
+
+    <button id="place-btn">Построить модель</button>
   </div>
+
   <div id="ar-container"></div>
 
   <!-- Three.js и модули -->
@@ -37,7 +52,7 @@
     let scene, camera, renderer, controller;
     let reticle, penModel, targetMesh;
 
-    // Offscreen canvas для генерации текстуры 2048x2048
+    // Offscreen canvas для текстуры
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     canvas.width = 2048;
@@ -46,21 +61,27 @@
     let baseColor = '#3a8ac7';
 
     function initCanvas() {
-      // Заливка корпуса цветом
+      // Заливаем фон цветом корпуса
       ctx.fillStyle = baseColor;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      // Рисуем логотип, если загружен
+      // Рисуем логотип, если есть
       if (logoImg) drawLogo();
     }
 
     function drawLogo() {
-      // Позиция в пикселях: справа-налево 215-350px, сверху-вниз 512-1250px
+      // Задаём область: справа-налево 215-350px, сверху-вниз 512-1250px
       const xStart = canvas.width - 350;      // 2048 - 350 = 1698
       const yStart = 512;
-      const width = 350 - 215;               // 135px
-      const height = 1250 - 512;             // 738px
-      ctx.clearRect(xStart, yStart, width, height);
-      ctx.drawImage(logoImg, xStart, yStart, width, height);
+      const rectWidth = 350 - 215;            // 135px
+      const rectHeight = 1250 - 512;          // 738px
+      // Очищаем область
+      ctx.clearRect(xStart, yStart, rectWidth, rectHeight);
+      // Поворачиваем и рисуем логотип на 90° против часовой
+      ctx.save();
+      ctx.translate(xStart, yStart + rectHeight);
+      ctx.rotate(-Math.PI / 2);
+      ctx.drawImage(logoImg, 0, 0, rectHeight, rectWidth);
+      ctx.restore();
     }
 
     function updateTexture() {
@@ -73,27 +94,37 @@
       targetMesh.material.needsUpdate = true;
     }
 
-    initCanvas(); // первоначальная инициализация
+    // Инициализируем canvas
+    initCanvas();
 
     init();
     function init() {
       // Сцена и камера
       scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.01, 20);
+      camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-      // Рендерер с AR
+      // Рендерер с поддержкой AR
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.xr.enabled = true;
       document.getElementById('ar-container').appendChild(renderer.domElement);
-      document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
 
-      // Источник управления
+      // Кнопка входа в AR внутри controls
+      const arBtn = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] });
+      arBtn.textContent = 'Войти в AR';
+      document.getElementById('controls').appendChild(arBtn);
+
+      // XR-контроллер для касания
       controller = renderer.xr.getController(0);
       controller.addEventListener('select', onSelect);
       scene.add(controller);
 
-      // Ретикл для размещения
+      // Кнопка «Построить модель»
+      document.getElementById('place-btn').addEventListener('click', () => {
+        onSelect();
+      });
+
+      // Ретикл для hit-test
       const geometry = new THREE.RingGeometry(0.08, 0.1, 32).rotateX(-Math.PI/2);
       const material = new THREE.MeshBasicMaterial({ color: 0x007AFF });
       reticle = new THREE.Mesh(geometry, material);
@@ -103,18 +134,16 @@
 
       // Загрузка модели ручки
       const loader = new THREE.GLTFLoader();
-      loader.load('models/PEN.glb', (gltf) => {
+      loader.load('models/pen.glb', (gltf) => {
         penModel = gltf.scene;
         penModel.visible = false;
         penModel.traverse((child) => {
-          if (child.isMesh) {
-            targetMesh = child;
-          }
+          if (child.isMesh) targetMesh = child;
         });
         scene.add(penModel);
       });
 
-      // Обработка загрузки логотипа
+      // Загрузка логотипа
       document.getElementById('logo-upload').addEventListener('change', (event) => {
         const file = event.target.files[0];
         if (file && file.type === 'image/png') {
@@ -140,7 +169,7 @@
         updateTexture();
       });
 
-      // Обработка hit-test
+      // Hit-test и рендер
       renderer.xr.addEventListener('sessionstart', () => {
         const session = renderer.xr.getSession();
         session.requestReferenceSpace('viewer').then((refSpace) => {
