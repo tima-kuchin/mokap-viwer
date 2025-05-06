@@ -1,15 +1,14 @@
 import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js';
-import { GLTFLoader } from 'https://unpkg.com/three@0.126.1/examples/jsm/loaders/GLTFLoader.js';
-import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.126.1/examples/jsm/webxr/ARButton.js';
+import { GLTFLoader }  from 'https://unpkg.com/three@0.126.1/examples/jsm/loaders/GLTFLoader.js';
+import { ARButton }    from 'https://cdn.jsdelivr.net/npm/three@0.126.1/examples/jsm/webxr/ARButton.js';
 
 let scene, camera, renderer, controller, reticle, penModel, targetMesh;
 
+// Offscreen-canvas для логотипа и цвета
 const canvas = document.createElement('canvas');
-const ctx = canvas.getContext('2d');
+const ctx    = canvas.getContext('2d');
 canvas.width = canvas.height = 2048;
-
-let logoImg = null;
-let baseColor = '#3a8ac7';
+let logoImg = null, baseColor = '#3a8ac7';
 
 function initCanvas() {
   ctx.fillStyle = baseColor;
@@ -30,10 +29,10 @@ function drawLogo() {
 function updateTexture() {
   if (!targetMesh) return;
   const tex = new THREE.CanvasTexture(canvas);
-  tex.flipY = false;
-  tex.encoding = THREE.sRGBEncoding;
+  tex.flipY       = false;
+  tex.encoding    = THREE.sRGBEncoding;
   tex.needsUpdate = true;
-  targetMesh.material.map = tex;
+  targetMesh.material.map        = tex;
   targetMesh.material.needsUpdate = true;
 }
 
@@ -50,9 +49,7 @@ document.getElementById('logo-upload').addEventListener('change', e => {
       logoImg.onload = () => { initCanvas(); updateTexture(); };
     };
     reader.readAsDataURL(file);
-  } else {
-    alert('Выберите PNG-файл.');
-  }
+  } else alert('Выберите PNG-файл.');
 });
 
 // UI: смена цвета
@@ -62,20 +59,20 @@ document.getElementById('color-picker').addEventListener('change', e => {
   updateTexture();
 });
 
-// Инициализация Three.js + ARButton
-scene = new THREE.Scene();
-camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.01, 20);
+// Инициализация Three.js + AR
+scene    = new THREE.Scene();
+camera   = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.01, 20);
 renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.xr.enabled = true;
 document.getElementById('ar-container').appendChild(renderer.domElement);
 
-// AR-кнопка
+// ARButton
 document.getElementById('controls').appendChild(
   ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] })
 );
 
-// Контроллер для касаний
+// Контроллер для select
 controller = renderer.xr.getController(0);
 controller.addEventListener('select', onSelect);
 scene.add(controller);
@@ -88,7 +85,7 @@ reticle.matrixAutoUpdate = false;
 reticle.visible = false;
 scene.add(reticle);
 
-// Загрузка модели ручки
+// Загрузка модели
 new GLTFLoader().load('models/pen.glb', gltf => {
   penModel = gltf.scene;
   penModel.visible = false;
@@ -96,7 +93,16 @@ new GLTFLoader().load('models/pen.glb', gltf => {
   scene.add(penModel);
 });
 
-// Настройка hit-test
+// Определяем onSelect для постановки модели
+function onSelect() {
+  if (reticle.visible && penModel) {
+    penModel.position.setFromMatrixPosition(reticle.matrix);
+    penModel.visible = true;
+    updateTexture();
+  }
+}
+
+// Hit-test setup
 renderer.xr.addEventListener('sessionstart', () => {
   const session = renderer.xr.getSession();
   session.requestReferenceSpace('viewer')
@@ -116,19 +122,14 @@ renderer.xr.addEventListener('sessionstart', () => {
         }
         renderer.render(scene, camera);
       });
-    });
+    })
+    .catch(err => console.error('hitTestSource error', err));
 });
 
 // Кнопка «Построить модель»
-document.getElementById('place-btn').addEventListener('click', () => {
-  if (reticle.visible && penModel) {
-    penModel.position.setFromMatrixPosition(reticle.matrix);
-    penModel.visible = true;
-    updateTexture();
-  }
-});
+document.getElementById('place-btn').addEventListener('click', onSelect);
 
-// Обработчик ресайза
+// Обработка ресайза
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
