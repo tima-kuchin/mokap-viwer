@@ -2,32 +2,16 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR-модель ручки с логотипом</title>
-  <style>
-    body, html { margin: 0; padding: 0; overflow: hidden; }
-    #controls {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 1;
-      background: rgba(255,255,255,0.9);
-      padding: 10px;
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    #logo-upload, #color-picker, #place-btn { display: block; width: 200px; }
-    #ar-container { width: 100vw; height: 100vh; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AR-модель ручки с hit-test</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div id="controls">
     <label for="logo-upload">Загрузить логотип (PNG):</label>
     <input type="file" id="logo-upload" accept="image/png">
 
-    <label for="color-picker">Выберите цвет корпуса:</label>
+    <label for="color-picker">Цвет корпуса:</label>
     <select id="color-picker">
       <option value="#FF0000">Красный</option>
       <option value="#FF7F00">Оранжевый</option>
@@ -43,152 +27,6 @@
 
   <div id="ar-container"></div>
 
-  <script type="module">
-    import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js';
-    import { GLTFLoader } from 'https://unpkg.com/three@0.126.1/examples/jsm/loaders/GLTFLoader.js';
-    import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.126.1/examples/jsm/webxr/ARButton.js';
-
-    let scene, camera, renderer, controller;
-    let reticle, penModel, targetMesh;
-
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = 2048;
-    canvas.height = 2048;
-    let logoImg = null;
-    let baseColor = '#3a8ac7';
-
-    function initCanvas() {
-      ctx.fillStyle = baseColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      if (logoImg) drawLogo();
-    }
-
-    function drawLogo() {
-      const xStart = canvas.width - 350;
-      const yStart = 512;
-      const rectWidth = 135;
-      const rectHeight = 738;
-      ctx.clearRect(xStart, yStart, rectWidth, rectHeight);
-      ctx.save();
-      ctx.translate(xStart, yStart + rectHeight);
-      ctx.rotate(-Math.PI / 2);
-      ctx.drawImage(logoImg, 0, 0, rectHeight, rectWidth);
-      ctx.restore();
-    }
-
-    function updateTexture() {
-      if (!targetMesh) return;
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.flipY = false;
-      texture.encoding = THREE.sRGBEncoding;
-      texture.needsUpdate = true;
-      targetMesh.material.map = texture;
-      targetMesh.material.needsUpdate = true;
-    }
-
-    initCanvas();
-    init();
-
-    function init() {
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.xr.enabled = true;
-      document.getElementById('ar-container').appendChild(renderer.domElement);
-
-      const arBtn = ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] });
-      arBtn.textContent = 'Войти в AR';
-      document.getElementById('controls').appendChild(arBtn);
-
-      controller = renderer.xr.getController(0);
-      controller.addEventListener('select', onSelect);
-      scene.add(controller);
-
-      document.getElementById('place-btn').addEventListener('click', onSelect);
-
-      const geometry = new THREE.RingGeometry(0.08, 0.1, 32).rotateX(-Math.PI/2);
-      const material = new THREE.MeshBasicMaterial({ color: 0x007AFF });
-      reticle = new THREE.Mesh(geometry, material);
-      reticle.matrixAutoUpdate = false;
-      reticle.visible = false;
-      scene.add(reticle);
-
-      const loader = new GLTFLoader();
-      loader.load('models/pen.glb', (gltf) => {
-        penModel = gltf.scene;
-        penModel.visible = false;
-        penModel.traverse((child) => {
-          if (child.isMesh) targetMesh = child;
-        });
-        scene.add(penModel);
-      });
-
-      document.getElementById('logo-upload').addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        if (file && file.type === 'image/png') {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            logoImg = new Image();
-            logoImg.src = e.target.result;
-            logoImg.onload = () => {
-              initCanvas();
-              updateTexture();
-            };
-          };
-          reader.readAsDataURL(file);
-        } else {
-          alert('Пожалуйста, выберите файл PNG.');
-        }
-      });
-
-      document.getElementById('color-picker').addEventListener('change', (e) => {
-        baseColor = e.target.value;
-        initCanvas();
-        updateTexture();
-      });
-
-      renderer.xr.addEventListener('sessionstart', () => {
-        const session = renderer.xr.getSession();
-        session.requestReferenceSpace('viewer').then((refSpace) => {
-          session.requestHitTestSource({ space: refSpace }).then((source) => {
-            renderer.setAnimationLoop((timestamp, frame) => {
-              if (frame) {
-                const referenceSpace = renderer.xr.getReferenceSpace();
-                const hitTestResults = frame.getHitTestResults(source);
-                if (hitTestResults.length) {
-                  const hit = hitTestResults[0];
-                  const pose = hit.getPose(referenceSpace);
-                  reticle.visible = true;
-                  reticle.matrix.fromArray(pose.transform.matrix);
-                } else {
-                  reticle.visible = false;
-                }
-              }
-              renderer.render(scene, camera);
-            });
-          });
-        });
-      });
-
-      window.addEventListener('resize', onWindowResize);
-    }
-
-    function onSelect() {
-      if (reticle.visible && penModel) {
-        penModel.position.setFromMatrixPosition(reticle.matrix);
-        penModel.visible = true;
-        updateTexture();
-      }
-    }
-
-    function onWindowResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-  </script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
