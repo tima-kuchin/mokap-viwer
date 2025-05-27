@@ -1,0 +1,150 @@
+/* style.css */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    background: #f9f9f9;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+  
+  header {
+    margin-bottom: 20px;
+  }
+  
+  header h1 {
+    font-size: 1.8rem;
+    color: #3a8ac7;
+    text-align: center;
+  }
+  
+  #controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 900px;
+  }
+  
+  .control {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .control label {
+    font-size: 0.9rem;
+    color: #555;
+  }
+  
+  .control select,
+  .control input[type="file"],
+  .control button {
+    padding: 8px 12px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    transition: border-color 0.2s;
+  }
+  
+  .control select:focus,
+  .control input[type="file"]:focus,
+  .control button:focus {
+    outline: none;
+    border-color: #3a8ac7;
+  }
+  
+  .control button {
+    cursor: pointer;
+    background: #3a8ac7;
+    color: #fff;
+    border: none;
+  }
+  
+  .control button:hover {
+    background: #3274a1;
+  }
+  
+  main {
+    width: 100%;
+    max-width: 1000px;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  #threeCanvas {
+    width: 100%;
+    height: auto;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+  }
+
+  #canvas-wrapper {
+    padding: 10px;
+    box-sizing: border-box;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+  
+  /* Секция с описанием под canvas */
+  #description {
+    width: 100%;
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    line-height: 1.5;
+  }
+
+  #description h2 {
+    font-size: 1.4rem;
+    color: #3a8ac7;
+    margin-bottom: 10px;
+  }
+
+  #description p {
+    font-size: 1rem;
+    color: #444;
+  }
+
+  #description ul {
+    margin: 10px 0 0 20px;
+  }
+
+  #description li {
+    margin-bottom: 6px;
+  }
+
+  @media (max-width: 768px) {
+    #controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .control {
+      width: 100%;
+    }
+  
+    #threeCanvas {
+      height: 50vw;
+    }
+  }
+  

@@ -1,22 +1,67 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>AR Ручка с логотипом</title>
-  <link rel="stylesheet" href="style.css">
-  
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image.prod.js"></script>
-  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-aframe.prod.js"></script>
-  
-
+  <meta charset="UTF-8">
+  <title>Редактор мокапов</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
 <body>
-  <div id="controls">
-    <label>Загрузите логотип (PNG): <input type="file" id="logoInput" accept="image/png" /></label>
-    <label>Цвет корпуса: <input type="color" id="colorPicker" value="#3a8ac7" /></label>
-    <button id="startAR">Начать AR</button>
-  </div>
-  <div id="ar-container"></div>
-  <script type="module" src="./app.js"></script>
+  <header>
+    <h1>Редактор мокапов</h1>
+  </header>
+
+  <section id="controls">
+    <div class="control">
+      <label>Выберите макет:
+        <select id="modelSelect">
+          <option value="pen.glb">Ручка</option>
+          <!-- другие .glb -->
+        </select>
+      </label>
+    </div>
+    <div class="control">
+      <label>Загрузить логотип:
+        <input type="file" id="logoInput" accept="image/png, image/jpeg">
+      </label>
+    </div>
+    <div class="control">
+      <label>Цвет модели:
+        <select id="colorSelect">
+          <option value="#ffffff">Белый</option>
+          <option value="#000000">Чёрный</option>
+          <option value="#ff0000">Красный</option>
+          <option value="#00ffff">Голубой</option>
+          <option value="#3a8ac7" selected>Синий</option>
+          <option value="#ffff00">Жёлтый</option>
+          <option value="#00ff00" >Зелёный</option>
+        </select>
+      </label>
+    </div>
+    <div class="control">
+      <button id="applyBtn">Сохранить модель в память</button>
+    </div>
+    <div class="control">
+      <button id="toMindARBtn" class="hidden">Перейти в AR</button>
+    </div>
+  </section>
+
+  <main id="canvas-wrapper">
+    <canvas id="threeCanvas" width="800" height="600"></canvas>
+  </main>
+
+  <section id="description">
+    <h2>Описание "Редактор мокапов 1.0a"</h2>
+    <p>Это демонстрационный редактор мокапов, который позволяет:</p>
+    <ul>
+      <li>Выбрать 3D-модель из списка (например, ручку).</li>
+      <li>Загрузить свой логотип и посмотреть его на 3D-модели.</li>
+      <li>Изменить цвет модели(выбрать заготовку), затонировав только нужные участки.</li>
+      <li>Сохранить полученную модель в памяти браузера и сразу перейти к AR-просмотру с помощью MindAR.</li>
+    </ul>
+    <p><strong>Бизнес-применение.</strong> Быстрый прототипинг брендированных товаров — создание визуализаций корпоративных сувениров (ручки, кружки, футболки и др.) для согласования с клиентом и подготовки маркетинговых материалов.</p>
+    <p style="margin-top: 8px;"><strong>Инструкция:</strong> выберете модель, загрузите логотип(jpg или png), выставьте параметры модели, нажмите «Сохранить модель в память», затем «Перейти в AR» для её оценки в дополненной реальности.</p>
+  </section>
+
+  <script type="module" src="./src/main.js"></script>
 </body>
 </html>
