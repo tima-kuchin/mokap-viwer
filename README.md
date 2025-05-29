@@ -14,7 +14,9 @@
 # Инструкция
 Выберете мокап из списка, загрузите логотип(jpg или png), выставьте параметры мокапа, нажмите «Сохранить модель в память», затем «Перейти в AR» для её оценки в дополненной реальности. 
 
-Потребуется замена targets.mind, сгенерируйте свой набор якорей https://hiukim.github.io/mind-ar-js-doc/quick-start/compile/ и замените файл targets.mind.
+Ссылка на файл для трекинга: https://disk.yandex.ru/i/MttaqyTmF2rBJQ
+
+Если потребуется замена targets.mind, сгенерируйте свой набор якорей https://hiukim.github.io/mind-ar-js-doc/quick-start/compile/ и замените файл targets.mind.
 
 # Используемые технологии
 js, vite, mindar, threejs. Используется модель формата glb. 
