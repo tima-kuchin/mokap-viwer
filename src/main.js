@@ -82,7 +82,7 @@ function loadModel(filename) {
   if (currentModel) scene.remove(currentModel);
   baseTextureImage = null;
 
-  loader.load(`./src/assets/models/${filename}`, gltf => {
+  loader.load(`/models/${filename}`, gltf => {
     currentModel = gltf.scene;
     scene.add(currentModel);
 
